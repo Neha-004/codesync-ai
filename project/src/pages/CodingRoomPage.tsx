@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useParams } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
+import { useEffect } from "react";
+import { socket } from "../services/socketService";
 import {
   Code2,
   MessageSquare,
@@ -43,11 +45,7 @@ const files = [
   { name: 'package.json', type: 'file', language: 'json' },
 ];
 
-const collaborators = [
-  { id: '1', name: 'John Doe', initials: 'JD', color: '#3B82F6', status: 'online', cursor: { line: 12, col: 15 } },
-  { id: '2', name: 'Alice Kim', initials: 'AK', color: '#8B5CF6', status: 'online', cursor: { line: 8, col: 22 } },
-  { id: '3', name: 'Sam Miller', initials: 'SM', color: '#06B6D4', status: 'away', cursor: null },
-];
+
 
 const chatMessages = [
   { id: '1', user: 'Alice Kim', initials: 'AK', color: '#8B5CF6', message: 'Hey, can you review the new feature I pushed?', time: '10:30 AM' },
@@ -101,6 +99,7 @@ export function App() {
 export function CodingRoomPage() {
   useParams(); // roomId from URL - used for future API calls
   const [code, setCode] = useState(defaultCode);
+  const { roomId } = useParams();
   const [showChat, setShowChat] = useState(true);
   const [showAI, setShowAI] = useState(true);
   const [showExplorer, setShowExplorer] = useState(true);
@@ -109,7 +108,22 @@ export function CodingRoomPage() {
   const [aiInput, setAiInput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const editorRef = useRef<unknown>(null);
+  const [collaborators, setCollaborators] = useState<any[]>([]);
+ useEffect(() => {
+  socket.emit("join-room", {
+    roomId: roomId || "room123",
+    username: "Neha",
+  });
 
+  socket.on("room-users", (users) => {
+    console.log("Room Users:", users);
+    setCollaborators(users);
+  });
+
+  return () => {
+    socket.off("room-users");
+  };
+}, [roomId]);
   const handleEditorDidMount = (editor: unknown) => {
     editorRef.current = editor;
   };
@@ -149,16 +163,13 @@ export function CodingRoomPage() {
                   className="w-8 h-8 border-2 border-codesync-bg"
                   style={{ borderColor: collab.color }}
                 >
-                  <AvatarFallback
-                    className="text-xs"
-                    style={{ backgroundColor: collab.color }}
-                  >
-                    {collab.initials}
-                  </AvatarFallback>
+                  <AvatarFallback className="text-xs">
+  {collab.username?.charAt(0).toUpperCase()}
+</AvatarFallback>
                 </Avatar>
               ))}
             </div>
-            <span className="text-sm text-muted-foreground">3 online</span>
+            <span className="text-sm text-muted-foreground">{collaborators.length} online</span>
           </div>
 
           {/* Actions */}
