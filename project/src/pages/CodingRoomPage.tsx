@@ -157,17 +157,16 @@ export function CodingRoomPage() {
           {/* Collaborators */}
           <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
-              {collaborators.map((collab) => (
-                <Avatar
-                  key={collab.id}
-                  className="w-8 h-8 border-2 border-codesync-bg"
-                  style={{ borderColor: collab.color }}
-                >
-                  <AvatarFallback className="text-xs">
-  {collab.username?.charAt(0).toUpperCase()}
-</AvatarFallback>
-                </Avatar>
-              ))}
+           {collaborators.map((collab) => (
+  <Avatar
+    key={collab.socketId}
+    className="w-8 h-8 border-2 border-codesync-bg"
+  >
+    <AvatarFallback className="text-xs">
+      {collab.username?.charAt(0).toUpperCase()}
+    </AvatarFallback>
+  </Avatar>
+))}
             </div>
             <span className="text-sm text-muted-foreground">{collaborators.length} online</span>
           </div>
