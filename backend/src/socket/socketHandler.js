@@ -4,6 +4,7 @@ const socketHandler = (io) => {
   io.on("connection", (socket) => {
     console.log("User Connected:", socket.id);
 
+    // Join Room
     socket.on("join-room", ({ roomId, username }) => {
       socket.join(roomId);
 
@@ -16,9 +17,7 @@ const socketHandler = (io) => {
         username,
       });
 
-      console.log(
-        `${username} joined room ${roomId}`
-      );
+      console.log(`${username} joined room ${roomId}`);
 
       io.to(roomId).emit(
         "room-users",
@@ -26,6 +25,21 @@ const socketHandler = (io) => {
       );
     });
 
+    // Chat Messages
+    socket.on("send-message", ({ roomId, username, message }) => {
+      console.log("MESSAGE RECEIVED:");
+      console.log(roomId);
+      console.log(username);
+      console.log(message);
+
+      io.to(roomId).emit("receive-message", {
+        username,
+        message,
+        timestamp: new Date(),
+      });
+    });
+
+    // Disconnect
     socket.on("disconnect", () => {
       Object.keys(activeRooms).forEach((roomId) => {
         activeRooms[roomId] =
@@ -39,10 +53,7 @@ const socketHandler = (io) => {
         );
       });
 
-      console.log(
-        "User Disconnected:",
-        socket.id
-      );
+      console.log("User Disconnected:", socket.id);
     });
   });
 };

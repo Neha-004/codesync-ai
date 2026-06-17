@@ -47,11 +47,6 @@ const files = [
 
 
 
-const chatMessages = [
-  { id: '1', user: 'Alice Kim', initials: 'AK', color: '#8B5CF6', message: 'Hey, can you review the new feature I pushed?', time: '10:30 AM' },
-  { id: '2', user: 'John Doe', initials: 'JD', color: '#3B82F6', message: 'Sure, looking at it now', time: '10:32 AM' },
-  { id: '3', user: 'Alice Kim', initials: 'AK', color: '#8B5CF6', message: 'I think we might need to refactor the auth module', time: '10:35 AM' },
-];
 
 const defaultCode = `import React, { useState, useEffect } from 'react';
 
@@ -108,6 +103,7 @@ export function CodingRoomPage() {
   const [aiInput, setAiInput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const editorRef = useRef<unknown>(null);
+  const [messages, setMessages] = useState<any[]>([]);
   const [collaborators, setCollaborators] = useState<any[]>([]);
  useEffect(() => {
   socket.emit("join-room", {
@@ -119,15 +115,29 @@ export function CodingRoomPage() {
     console.log("Room Users:", users);
     setCollaborators(users);
   });
+  socket.on("receive-message", (message) => {
+  setMessages((prev) => [...prev, message]);
+});
 
   return () => {
     socket.off("room-users");
+     socket.off("receive-message");
   };
 }, [roomId]);
   const handleEditorDidMount = (editor: unknown) => {
     editorRef.current = editor;
   };
+const sendMessage = () => {
+  if (!chatMessage.trim()) return;
 
+  socket.emit("send-message", {
+    roomId: roomId || "room123",
+    username: "Neha",
+    message: chatMessage,
+  });
+
+  setChatMessage("");
+};
   const handleRun = async () => {
     setIsRunning(true);
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -374,25 +384,25 @@ export function CodingRoomPage() {
                   </div>
                   <ScrollArea className="flex-1 p-3">
                     <div className="space-y-4">
-                      {chatMessages.map((msg) => (
-                        <div key={msg.id} className="flex gap-2">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback
-                              className="text-xs"
-                              style={{ backgroundColor: msg.color }}
-                            >
-                              {msg.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">{msg.user}</span>
-                              <span className="text-xs text-muted-foreground">{msg.time}</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{msg.message}</p>
-                          </div>
-                        </div>
-                      ))}
+                   {messages.map((msg, index) => (
+  <div key={index} className="flex gap-2">
+    <Avatar className="w-8 h-8">
+      <AvatarFallback className="text-xs">
+        {msg.username?.charAt(0).toUpperCase()}
+      </AvatarFallback>
+    </Avatar>
+
+    <div>
+      <p className="text-sm font-medium">
+        {msg.username}
+      </p>
+
+      <p className="text-sm text-muted-foreground">
+        {msg.message}
+      </p>
+    </div>
+  </div>
+))}
                     </div>
                   </ScrollArea>
                   <div className="p-3 border-t border-white/5">
@@ -403,9 +413,13 @@ export function CodingRoomPage() {
                         onChange={(e) => setChatMessage(e.target.value)}
                         className="border-white/10"
                       />
-                      <Button size="icon" className="shrink-0">
-                        <Send className="w-4 h-4" />
-                      </Button>
+                    <Button
+  size="icon"
+  className="shrink-0"
+  onClick={sendMessage}
+>
+  <Send className="w-4 h-4" />
+</Button>
                     </div>
                   </div>
                 </div>
